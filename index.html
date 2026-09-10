@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <meta
     name="description"
-    content="VIS Group 小组信息、研究动态与日报周报归档。"
+    content="VIS Group 小组主页，介绍小组研究方向、成员协作与研究记录平台。"
   >
 
   <title>VIS Group · 小组主页</title>
@@ -18,132 +19,337 @@
 
   <link
     rel="stylesheet"
-    href="./static/styles.css"
+    href="./landing.css"
   >
 </head>
 
 <body>
-  <a class="skip-link" href="#main">跳到主要内容</a>
-
-  <header class="header">
+  <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="#home">
-        <span class="brand-mark">
-          V<span>IS</span>
-        </span>
-
-        <span>VIS Group</span>
+      <a class="brand" href="#home" aria-label="VIS Group 首页">
+        <span class="brand-mark">V<span>IS</span></span>
+        <span class="brand-name">VIS Group</span>
       </a>
 
-      <nav aria-label="主导航">
-        <a href="#home">小组首页</a>
-        <a href="#about">网站说明</a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="#about">小组简介</a>
+        <a href="#research">研究方向</a>
+        <a href="#platform">研究平台</a>
+        <a href="#contact">联系方式</a>
       </nav>
 
-      <div class="account-actions">
-        <a
-          class="button primary"
-          href="http://122.193.22.121:30092/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          进入完整网站
-        </a>
-      </div>
+      <a
+        class="header-button"
+        href="http://122.193.22.121:30092/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        进入小组网站
+      </a>
     </div>
   </header>
 
-  <main id="main" class="container">
-    <section id="home" class="intro">
-      <div class="intro-copy">
-        <p class="eyebrow">VISUALIZATION · RESEARCH · EXPLORATION</p>
+  <main>
+    <section id="home" class="hero section">
+      <div class="hero-identity">
+        <div class="logo-card">
+          <img
+            src="./static/favicon.svg"
+            alt="VIS Group 标志"
+          >
+        </div>
+
+        <div class="contact-summary">
+          <p>请填写学校或单位名称</p>
+          <p>请填写学院或实验室名称</p>
+          <p>中国 · 江苏</p>
+          <p>
+            <a href="mailto:your-email@example.com">
+              your-email@example.com
+            </a>
+          </p>
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <p class="eyebrow">VISUALIZATION · INTELLIGENCE · SCIENCE</p>
 
         <h1>
-          VIS Group<span class="accent">.</span>
+          VIS Group
+          <span>可视化与智能研究小组</span>
         </h1>
 
-        <h2>可视化与智能研究小组</h2>
-
-        <p class="intro-description">
-          记录小组研究动态，整理日报、周报和文献资料，
-          促进成员之间的交流与协作。
+        <p class="hero-lead">
+          我们关注数据可视化、视觉分析与人工智能，
+          探索如何通过数据、计算和交互帮助人们理解复杂问题。
         </p>
 
-        <div class="intro-actions">
+        <p>
+          小组成员围绕科研项目、论文阅读和技术实践开展合作。
+          我们通过日报与周报记录研究过程，通过文献资料库分享值得阅读的工作，
+          并在持续讨论中完善研究问题与解决方案。
+        </p>
+
+        <p>
+          本页面用于介绍小组及其研究方向。完整的成员系统、研究日志、
+          文献资料和管理功能运行在小组服务器上。
+        </p>
+
+        <div class="hero-actions">
           <a
-            class="button primary"
+            class="primary-button"
             href="http://122.193.22.121:30092/"
             target="_blank"
             rel="noopener noreferrer"
           >
-            进入小组网站 ↗
+            进入完整网站
+            <span aria-hidden="true">↗</span>
           </a>
 
-          <a class="muted-link" href="#about">
-            查看网站说明 →
+          <a
+            class="text-button"
+            href="#about"
+          >
+            了解我们
+            <span aria-hidden="true">↓</span>
           </a>
         </div>
       </div>
-
-      <aside class="intro-note">
-        <span class="eyebrow">OUR RESEARCH</span>
-
-        <h3>
-          从数据出发，<br>
-          在探索中前行。
-        </h3>
-
-        <p>
-          完整网站运行在小组服务器上，支持成员登录、
-          日报周报提交、文献上传和管理员审核。
-        </p>
-
-        <div class="note-bottom">
-          观察 <span>／</span>
-          理解 <span>／</span>
-          创造
-        </div>
-      </aside>
     </section>
 
-    <section id="about" class="recent-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">ABOUT THIS SITE</p>
-          <h2>网站说明</h2>
-        </div>
+    <section id="about" class="section content-section">
+      <div class="section-label">
+        <span>01</span>
+        <p>ABOUT US</p>
       </div>
 
-      <div class="report-list">
-        <article class="report-card">
-          <div>
-            <span class="badge">GitHub Pages</span>
-            <h3>项目入口</h3>
-            <p>
-              当前页面用于展示项目入口和基本信息。
-              网站源代码由 GitHub 仓库统一管理。
-            </p>
-          </div>
-        </article>
+      <div class="section-content">
+        <h2>小组简介</h2>
 
-        <article class="report-card">
-          <div>
-            <span class="badge weekly">Group Server</span>
-            <h3>完整网站</h3>
+        <div class="prose">
+          <p>
+            VIS Group 是一个面向数据分析、信息可视化和智能交互研究的小组。
+            我们希望将数据处理、算法研究、可视表达和实际问题结合起来，
+            形成完整的研究与实践过程。
+          </p>
+
+          <p>
+            小组鼓励成员记录每天的探索与每周的进展，包括已经完成的工作、
+            遇到的问题、实验结果和下一步计划。这些记录帮助成员回顾研究过程，
+            也让不同方向之间的合作更加顺畅。
+          </p>
+        </div>
+
+        <div class="facts">
+          <div class="fact">
+            <strong>Research</strong>
+            <span>围绕真实问题开展研究</span>
+          </div>
+
+          <div class="fact">
+            <strong>Communication</strong>
+            <span>通过讨论与记录分享想法</span>
+          </div>
+
+          <div class="fact">
+            <strong>Collaboration</strong>
+            <span>连接不同背景与研究方向</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="research" class="section content-section">
+      <div class="section-label">
+        <span>02</span>
+        <p>RESEARCH</p>
+      </div>
+
+      <div class="section-content">
+        <h2>研究方向</h2>
+
+        <div class="research-list">
+          <article class="research-item">
+            <div class="research-number">01</div>
+
+            <div>
+              <h3>数据可视化</h3>
+              <p>
+                研究如何将复杂数据转换为清晰、准确且易于理解的视觉表达，
+                支持数据探索、分析与传播。
+              </p>
+
+              <div class="tags">
+                <span>Data Visualization</span>
+                <span>Visual Design</span>
+                <span>Data Storytelling</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="research-item">
+            <div class="research-number">02</div>
+
+            <div>
+              <h3>视觉分析</h3>
+              <p>
+                将交互式可视化与数据分析算法结合，
+                帮助研究人员发现模式、验证假设并理解分析结果。
+              </p>
+
+              <div class="tags">
+                <span>Visual Analytics</span>
+                <span>Human-in-the-loop</span>
+                <span>Interactive Analysis</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="research-item">
+            <div class="research-number">03</div>
+
+            <div>
+              <h3>人工智能与人机交互</h3>
+              <p>
+                探索人工智能系统的交互方式、可解释性与实际应用，
+                关注人与智能系统协作过程中产生的新问题。
+              </p>
+
+              <div class="tags">
+                <span>Artificial Intelligence</span>
+                <span>Human–Computer Interaction</span>
+                <span>Explainable AI</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="platform" class="section content-section">
+      <div class="section-label">
+        <span>03</span>
+        <p>PLATFORM</p>
+      </div>
+
+      <div class="section-content">
+        <h2>小组研究平台</h2>
+
+        <p class="section-intro">
+          我们搭建了内部研究记录平台，用于管理成员账号、
+          整理研究进展和共享文献资料。
+        </p>
+
+        <div class="feature-grid">
+          <article class="feature">
+            <span class="feature-index">A</span>
+            <h3>研究日志</h3>
             <p>
-              登录、注册、日报、周报、文献和附件等功能，
-              均由小组服务器处理和保存。
+              成员可以提交日报和周报，记录当前进展、问题与后续计划。
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-index">B</span>
+            <h3>文献资料</h3>
+            <p>
+              集中保存论文、阅读笔记和相关链接，方便小组成员查阅讨论。
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-index">C</span>
+            <h3>成员协作</h3>
+            <p>
+              通过成员资料、账号审核和内容管理支持小组内部协作。
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-index">D</span>
+            <h3>长期归档</h3>
+            <p>
+              研究内容保存在小组服务器中，形成可持续维护的研究档案。
+            </p>
+          </article>
+        </div>
+
+        <div class="platform-link">
+          <div>
+            <p class="eyebrow">VIS GROUP PLATFORM</p>
+            <h3>访问完整研究平台</h3>
+            <p>
+              登录后可查看研究日志、提交报告、上传文献并维护个人资料。
             </p>
           </div>
-        </article>
+
+          <a
+            class="primary-button light"
+            href="http://122.193.22.121:30092/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            打开平台
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section content-section contact-section">
+      <div class="section-label">
+        <span>04</span>
+        <p>CONTACT</p>
+      </div>
+
+      <div class="section-content">
+        <h2>联系我们</h2>
+
+        <p class="section-intro">
+          如果你对小组的研究方向、项目合作或学生科研感兴趣，
+          欢迎通过邮件联系我们。
+        </p>
+
+        <div class="contact-lines">
+          <p>
+            <span>单位</span>
+            请填写学校、学院或实验室名称
+          </p>
+
+          <p>
+            <span>地址</span>
+            请填写实验室地址
+          </p>
+
+          <p>
+            <span>邮箱</span>
+            <a href="mailto:your-email@example.com">
+              your-email@example.com
+            </a>
+          </p>
+
+          <p>
+            <span>代码</span>
+            <a
+              href="https://github.com/data-miner123/data-miner123.github.io"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub Repository ↗
+            </a>
+          </p>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer class="footer container">
-    <span>VIS Group</span>
-    <span>研究 · 交流 · 记录</span>
-    <a href="#home">返回首页 ↑</a>
+  <footer class="site-footer">
+    <div>
+      <strong>VIS Group</strong>
+      <span>Research · Communication · Collaboration</span>
+    </div>
+
+    <a href="#home">返回顶部 ↑</a>
   </footer>
 </body>
 </html>
