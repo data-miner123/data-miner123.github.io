@@ -4,8 +4,8 @@
 
 (1)修改不需要重启网站的文件：
 ```
-先检查修改 
-git status 
+先检查修改
+git status
 git diff -- 文件名（含后缀）
 ```
 内容正确后提交：
@@ -14,10 +14,10 @@ git add 文件名（含后缀）
 git commit -m “Update 文件名（无后缀）”
 ```
 
-同步其他成员可能已经提交的内容： ```git pull --rebase origin main ```
-最后上传到 GitHub： ```git push origin main  ```
+同步其他成员可能已经提交的内容：```git pull --rebase origin main```
+最后上传到 GitHub：```git push origin main```
 
-exp： ```cd ~/VIS_Group```
+exp：```cd ~/VIS_Group```
 ```
 git add README.md
 git commit -m "Update README"
@@ -46,7 +46,7 @@ git push origin main
 ```
 
 再切换到系统管理员账号：
-```su - ren9000k （jsklren9000k）```
+```su - ren9000k（jsklren9000k）```
 重启并检查网站：
 ```
 sudo systemctl restart vis-group
@@ -74,4 +74,4 @@ http://127.0.0.1:8000/api/site
 | `README.md` | 不需要 | 项目说明文档 |
 修改静态文件后如果页面还是旧版本，使用 Cmd+Shift+R 强制刷新。
 
-GitHub更新至服务器： 无需操作，每五分钟自动更新同步 
+GitHub更新至服务器：无需操作，每五分钟自动更新同步
