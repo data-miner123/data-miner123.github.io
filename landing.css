@@ -443,7 +443,8 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
+  background: #fff;
 }
 
 .publication-figure span {
@@ -481,6 +482,13 @@ button:focus-visible {
   font-style: italic;
 }
 
+.publication-summary {
+  max-width: 720px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
 .publication-link {
   display: inline-block;
   margin-top: 9px;
@@ -498,6 +506,13 @@ button:focus-visible {
   color: var(--muted);
   font-weight: 500;
   border-bottom-color: transparent;
+}
+
+.publication-empty {
+  margin: 0;
+  padding: 42px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
 }
 
 .section-intro {

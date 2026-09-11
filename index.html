@@ -19,8 +19,10 @@
 
   <link
     rel="stylesheet"
-    href="./landing.css?v=4"
+    href="./landing.css?v=5"
   >
+
+  <script src="./landing.js?v=1" defer></script>
 </head>
 
 <body>
@@ -241,38 +243,8 @@
           展示小组成员近期具有代表性的研究成果。
         </p>
 
-        <div class="publication-list">
-          <article class="publication-item">
-            <div class="publication-figure" aria-label="第一篇文章代表图待上传">
-              <span>代表图待上传</span>
-            </div>
-
-            <div class="publication-info">
-              <p class="publication-type">PUBLICATION 01</p>
-              <h3>文章题目待补充</h3>
-              <p class="publication-authors">作者信息待补充</p>
-              <p class="publication-venue">期刊或会议名称，年份</p>
-              <span class="publication-link is-disabled" aria-disabled="true">
-                论文链接待补充
-              </span>
-            </div>
-          </article>
-
-          <article class="publication-item">
-            <div class="publication-figure" aria-label="第二篇文章代表图待上传">
-              <span>代表图待上传</span>
-            </div>
-
-            <div class="publication-info">
-              <p class="publication-type">PUBLICATION 02</p>
-              <h3>文章题目待补充</h3>
-              <p class="publication-authors">作者信息待补充</p>
-              <p class="publication-venue">期刊或会议名称，年份</p>
-              <span class="publication-link is-disabled" aria-disabled="true">
-                论文链接待补充
-              </span>
-            </div>
-          </article>
+        <div class="publication-list" id="publication-list" aria-live="polite">
+          <p class="publication-empty">正在读取小组成果…</p>
         </div>
       </div>
     </section>

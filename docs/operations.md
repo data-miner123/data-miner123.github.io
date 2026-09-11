@@ -5,3 +5,9 @@
 | GitHub 仓库 | https://github.com/data-miner123/data-miner123.github.io | 保存和协作修改代码 |
 | GitHub Pages | https://data-miner123.github.io/ | 实验室介绍和网站入口 |
 | 完整小组网站 | http://122.193.22.121:30092/ | 登录、提交日报和上传文献 |
+
+## 公开成果发布
+
+日常更新公开首页的“小组成果”不再需要手工修改根目录 `index.html`。管理员登录完整小组网站，进入“管理”→“公开首页成果”，保存内容并点击“发布到 GitHub Pages”即可。
+
+详细操作见 [publication-management.md](publication-management.md)。

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Small self-hosted group website. Python 3.10+, standard library only."""
-import argparse, base64, binascii, getpass, hashlib, hmac, json, mimetypes, os, re, secrets, sqlite3, threading, time
+import argparse, base64, binascii, getpass, hashlib, hmac, json, mimetypes, os, re, secrets, sqlite3, subprocess, threading, time
 from pathlib import Path
 from datetime import date, datetime, timedelta, timezone
 from http.cookies import SimpleCookie
@@ -11,11 +11,15 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parent
 MAX_FILE, MAX_LITERATURE_FILE, MAX_REQUEST, SESSION_DAYS = 5*1024*1024, 20*1024*1024, 30*1024*1024, 7
 EXTENSIONS = {'.pdf','.md','.txt','.docx','.pptx','.xlsx','.png','.jpg','.jpeg'}
+PUBLICATION_IMAGE_EXTENSIONS = {'.png','.jpg','.jpeg','.webp'}
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_.-]{3,32}$')
 DB_PATH = ROOT/'data'/'vis-group.sqlite3'
+PUBLICATIONS_PATH = ROOT/'publications.json'
+PUBLICATION_ASSETS = ROOT/'publication-assets'
 SECURE_COOKIE = os.environ.get('VIS_SECURE_COOKIE') == '1'
 LOGIN_ATTEMPTS = {}
 SITE_LOCK = threading.Lock()
+PUBLICATION_LOCK = threading.Lock()
 
 def now_iso(): return datetime.now(timezone.utc).isoformat()
 
@@ -120,6 +124,56 @@ def clean_news(data):
 def clean_profile(data):
     return {key:clean(data,key,maximum,key in {'name','role'}) for key,maximum in {'name':60,'role':80,'area':300,'initial':10}.items()}
 
+def read_publications():
+    if not PUBLICATIONS_PATH.exists(): return []
+    items=json.loads(PUBLICATIONS_PATH.read_text(encoding='utf-8'))
+    if not isinstance(items,list) or not all(isinstance(item,dict) for item in items): raise ApiError(500,'成果数据文件格式不正确。')
+    return items
+
+def write_publications(items):
+    temporary=PUBLICATIONS_PATH.with_suffix('.json.tmp')
+    temporary.write_text(json.dumps(items,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    os.replace(temporary,PUBLICATIONS_PATH)
+
+def clean_publication(data):
+    item={key:clean(data,key,maximum,key in {'title','authors','venue','year'}) for key,maximum in {'title':250,'authors':500,'venue':200,'year':4,'summary':1500,'url':1000,'image_alt':300}.items()}
+    if not re.fullmatch(r'\d{4}',item['year']): raise ApiError(400,'成果年份应为 4 位数字。')
+    if item['url']:
+        parsed=urlsplit(item['url'])
+        if parsed.scheme not in {'http','https'} or not parsed.netloc: raise ApiError(400,'论文链接必须是完整的 HTTP 或 HTTPS 地址。')
+    item['image_alt']=item['image_alt'] or f"{item['title']} 的代表图"
+    return item
+
+def decode_publication_image(data):
+    image=data.get('image')
+    if not image: return '',None
+    if not isinstance(image,dict) or not isinstance(image.get('name'),str) or not isinstance(image.get('data'),str): raise ApiError(400,'代表图格式不正确。')
+    filename=image['name'].replace('\\','/').split('/')[-1]; extension=Path(filename).suffix.lower()
+    if extension not in PUBLICATION_IMAGE_EXTENSIONS: raise ApiError(400,'代表图仅支持 JPG、PNG 或 WebP。')
+    try: content=base64.b64decode(image['data'],validate=True)
+    except binascii.Error: raise ApiError(400,'代表图内容不正确。')
+    if not content or len(content)>MAX_FILE: raise ApiError(400,'代表图不能为空，且不能超过 5 MB。')
+    detected=''
+    if content.startswith(b'\x89PNG\r\n\x1a\n'): detected='.png'
+    elif content.startswith(b'\xff\xd8\xff'): detected='.jpg'
+    elif len(content)>=12 and content[:4]==b'RIFF' and content[8:12]==b'WEBP': detected='.webp'
+    allowed_extensions={'.jpg','.jpeg'} if detected=='.jpg' else {detected}
+    if not detected or extension not in allowed_extensions: raise ApiError(400,'代表图扩展名与实际文件类型不一致。')
+    return detected,content
+
+def publication_changes_pending():
+    result=subprocess.run(['git','-C',str(ROOT),'status','--porcelain','--','publications.json','publication-assets'],capture_output=True,text=True,timeout=10)
+    return bool(result.stdout.strip())
+
+def run_git(arguments,timeout=90):
+    environment=os.environ.copy(); environment['GIT_SSH_COMMAND']='ssh -o BatchMode=yes -o ConnectTimeout=10'
+    try: result=subprocess.run(['git','-C',str(ROOT),*arguments],capture_output=True,text=True,timeout=timeout,env=environment)
+    except (OSError,subprocess.TimeoutExpired): raise ApiError(502,'GitHub 发布命令未能完成，请稍后重试。')
+    if result.returncode:
+        detail=(result.stderr or result.stdout or '').strip().splitlines()
+        raise ApiError(502,'GitHub 发布失败：'+(detail[-1][:300] if detail else '未知错误'))
+    return result.stdout.strip()
+
 def decode_attachment(data,maximum):
     item=data.get('attachment')
     if not item: return '',None
@@ -196,6 +250,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.require_user(True); site=read_site(); members=site.get('members',[])
                 if not isinstance(members,list): raise ApiError(500,'小组成员配置格式不正确。')
                 self.respond(200,members)
+            elif path=='/api/admin/publications':
+                self.require_user(True); self.respond(200,{'items':read_publications(),'pending_changes':publication_changes_pending()})
             elif re.fullmatch(r'/api/reports/[0-9a-f]{32}(/attachment)?',path):
                 self.require_user(); report_id=path.split('/')[3]; db=connect()
                 try: row=db.execute('SELECT * FROM reports WHERE id=?',(report_id,)).fetchone()
@@ -218,6 +274,10 @@ class Handler(BaseHTTPRequestHandler):
                     self.respond(200,row['attachment'],mime,{'Content-Disposition':f"{disposition}; filename=literature; filename*=UTF-8''"+quote(row['filename'],safe='')})
                 else:
                     item={k:row[k] for k in row.keys() if k!='attachment'}; item['comments']=[dict(comment) for comment in comments]; self.respond(200,item)
+            elif re.fullmatch(r'/publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',path):
+                self.require_user(True); file=ROOT/path.lstrip('/')
+                if not file.is_file(): raise ApiError(404,'代表图不存在。')
+                self.respond(200,file.read_bytes(),mimetypes.guess_type(file.name)[0] or 'application/octet-stream')
             else:
                 files={'/':'index.html','/index.html':'index.html','/styles.css':'styles.css','/app.js':'app.js','/favicon.svg':'favicon.svg'}
                 if path not in files: raise ApiError(404,'页面不存在。')
@@ -235,6 +295,11 @@ class Handler(BaseHTTPRequestHandler):
             elif path=='/api/literature': self.create_literature(data)
             elif path=='/api/profile': self.update_profile(data)
             elif path=='/api/admin/news': self.create_news(data)
+            elif path=='/api/admin/publications': self.create_publication(data)
+            elif path=='/api/admin/publications/publish': self.publish_publications()
+            elif re.fullmatch(r'/api/admin/publications/[0-9a-f]{32}/delete',path): self.delete_publication(path)
+            elif re.fullmatch(r'/api/admin/publications/[0-9a-f]{32}/move',path): self.move_publication(path,data)
+            elif re.fullmatch(r'/api/admin/publications/[0-9a-f]{32}',path): self.update_publication(path,data)
             elif re.fullmatch(r'/api/admin/news/\d+/delete',path): self.delete_news(int(path.split('/')[4]))
             elif re.fullmatch(r'/api/admin/news/\d+',path): self.update_news(path,data)
             elif re.fullmatch(r'/api/admin/members/\d+/bind',path): self.bind_member(path,data)
@@ -384,6 +449,57 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(news,list) or index>=len(news): raise ApiError(404,'动态不存在。')
             news.pop(index); write_site(site)
         self.respond(200,{'news':news})
+    def create_publication(self,data):
+        self.require_user(True); item=clean_publication(data); extension,content=decode_publication_image(data); publication_id=uuid4().hex
+        item.update({'id':publication_id,'image':'','created_at':now_iso(),'updated_at':now_iso()})
+        with PUBLICATION_LOCK:
+            items=read_publications()
+            if len(items)>=100: raise ApiError(400,'公开成果最多保留 100 条。')
+            if content is not None:
+                PUBLICATION_ASSETS.mkdir(parents=True,exist_ok=True); target=PUBLICATION_ASSETS/f'{publication_id}{extension}'; temporary=target.with_suffix(target.suffix+'.tmp'); temporary.write_bytes(content); os.replace(temporary,target); item['image']=f'publication-assets/{target.name}'
+            items.insert(0,item); write_publications(items)
+        self.respond(201,{'items':items,'pending_changes':True})
+    def update_publication(self,path,data):
+        self.require_user(True); publication_id=path.rsplit('/',1)[1]; cleaned=clean_publication(data); extension,content=decode_publication_image(data); remove_image=data.get('remove_image') is True
+        with PUBLICATION_LOCK:
+            items=read_publications(); index=next((i for i,item in enumerate(items) if item.get('id')==publication_id),None)
+            if index is None: raise ApiError(404,'成果不存在。')
+            previous=items[index]; old_image=previous.get('image',''); new_image=old_image
+            if content is not None:
+                PUBLICATION_ASSETS.mkdir(parents=True,exist_ok=True); target=PUBLICATION_ASSETS/f'{publication_id}{extension}'; temporary=target.with_suffix(target.suffix+'.tmp'); temporary.write_bytes(content); os.replace(temporary,target); new_image=f'publication-assets/{target.name}'
+            elif remove_image: new_image=''
+            items[index]={**cleaned,'id':publication_id,'image':new_image,'created_at':previous.get('created_at',now_iso()),'updated_at':now_iso()}; write_publications(items)
+            if old_image and old_image!=new_image and re.fullmatch(r'publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',old_image): (ROOT/old_image).unlink(missing_ok=True)
+        self.respond(200,{'items':items,'pending_changes':True})
+    def delete_publication(self,path):
+        self.require_user(True); publication_id=path.split('/')[4]
+        with PUBLICATION_LOCK:
+            items=read_publications(); index=next((i for i,item in enumerate(items) if item.get('id')==publication_id),None)
+            if index is None: raise ApiError(404,'成果不存在。')
+            removed=items.pop(index); write_publications(items); image=removed.get('image','')
+            if image and re.fullmatch(r'publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',image): (ROOT/image).unlink(missing_ok=True)
+        self.respond(200,{'items':items,'pending_changes':True})
+    def move_publication(self,path,data):
+        self.require_user(True); publication_id=path.split('/')[4]; direction=clean(data,'direction',4)
+        if direction not in {'up','down'}: raise ApiError(400,'排序方向不正确。')
+        with PUBLICATION_LOCK:
+            items=read_publications(); index=next((i for i,item in enumerate(items) if item.get('id')==publication_id),None)
+            if index is None: raise ApiError(404,'成果不存在。')
+            target=index+(-1 if direction=='up' else 1)
+            if 0<=target<len(items): items[index],items[target]=items[target],items[index]; write_publications(items)
+        self.respond(200,{'items':items,'pending_changes':publication_changes_pending()})
+    def publish_publications(self):
+        self.require_user(True)
+        with PUBLICATION_LOCK:
+            run_git(['pull','--rebase','--autostash','origin','main'])
+            run_git(['add','--','publications.json','publication-assets'])
+            diff=subprocess.run(['git','-C',str(ROOT),'diff','--cached','--quiet','--','publications.json','publication-assets'],timeout=10)
+            if diff.returncode==0: return self.respond(200,{'ok':True,'published':False,'message':'没有待发布的成果改动。'})
+            if diff.returncode!=1: raise ApiError(502,'无法检查待发布的 GitHub 改动。')
+            run_git(['commit','-m',f"Publish group achievements {datetime.now().strftime('%Y-%m-%d %H:%M')}",'--','publications.json','publication-assets'])
+            run_git(['push','origin','main'])
+            commit=run_git(['rev-parse','--short','HEAD'])
+        self.respond(200,{'ok':True,'published':True,'commit':commit,'message':'成果已推送到 GitHub Pages，通常会在几分钟内更新。'})
     def manage_user(self,path,data):
         admin=self.require_user(True); _,_,_,_,user_id,action=path.split('/')
         if user_id==admin['id'] and action in {'disable','promote'}: raise ApiError(400,'不能停用或修改自己的管理员身份。')
