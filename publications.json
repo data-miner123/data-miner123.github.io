@@ -1,5 +1,18 @@
 [
   {
+    "title": "A collaborative mixture of experts framework for building energy  consumption prediction",
+    "authors": "Wei Tan1,2, Yunzhe Wang1,2 (), Qiming Fu1,2, You Lu1,2, Jianping Chen1,2,3",
+    "venue": "Building Simulation",
+    "year": "2026",
+    "summary": "",
+    "url": "https://doi.org/10.1007/s12273-025-1334-7",
+    "image_alt": "A collaborative mixture of experts framework for building energy  consumption prediction 的代表图",
+    "id": "294c9a79c4634bfb99b6b25a73d6e7c2",
+    "image": "publication-assets/294c9a79c4634bfb99b6b25a73d6e7c2.png",
+    "created_at": "2026-09-11T09:11:26.909921+00:00",
+    "updated_at": "2026-09-11T09:11:26.909924+00:00"
+  },
+  {
     "title": "Graph-based visual analysis for HVAC system anomaly detection",
     "authors": "n Tianyuan Caoa,b , Yunzhe Wanga,b,∗ , Qiming Fu a,b , You Lu a,b , Jianping Chena,b,c , Yushi Li d , Chengtao Ji d",
     "venue": "Energy & Buildings",
