@@ -23,7 +23,8 @@ function literatureRow(item,admin=false){
   return `<div class="${admin?'admin-row':'literature-row-wrap'}"><button class="literature-row" data-literature="${esc(item.id)}"><div class="literature-row-top"><span class="literature-type">${item.filename?'文献附件':'外部链接'}</span><span class="literature-publication">${esc(publication)}</span><span class="comment-chip">${Number(item.comment_count)||0} 条评论</span></div><h3>${esc(item.title)}<span aria-hidden="true">↗</span></h3><p class="literature-authors">${esc(item.authors)}</p>${item.notes?`<p class="literature-summary">${esc(item.notes)}</p>`:''}<p class="literature-uploader">由 ${esc(item.uploader)} 上传${item.filename?` · ${esc(item.filename)}`:''}</p></button>${admin?`<button class="button danger" data-delete-literature="${esc(item.id)}" data-title="${esc(item.title)}">删除</button>`:''}</div>`;
 }
 function publicationAdminRow(item,index){
-  const image=item.image?`<img class="admin-publication-thumb" src="/${esc(item.image)}" alt="">`:'<div class="admin-publication-thumb is-empty">无代表图</div>';
+  const version=encodeURIComponent(item.updated_at||'');
+  const image=item.image?`<img class="admin-publication-thumb" src="/${esc(item.image)}?v=${version}" alt="">`:'<div class="admin-publication-thumb is-empty">无代表图</div>';
   return `<article class="admin-row publication-admin-row">${image}<div class="admin-publication-copy"><h3>${esc(item.title)}</h3><p>${esc(item.authors)} · ${esc(item.venue)} · ${esc(item.year)}</p></div><div class="row-actions"><button class="button" data-move-publication="up" data-publication-id="${esc(item.id)}" ${index===0?'disabled':''}>上移</button><button class="button" data-move-publication="down" data-publication-id="${esc(item.id)}" ${index===state.publications.length-1?'disabled':''}>下移</button><button class="button" data-edit-publication="${esc(item.id)}">编辑</button><button class="button danger" data-delete-publication="${esc(item.id)}" data-title="${esc(item.title)}">删除</button></div></article>`;
 }
 function renderReports(){
@@ -102,7 +103,7 @@ function composeNews(index=null){
 function composePublication(id=''){
   if(state.user?.role!=='admin')return;const form=$('#publication-form'),item=state.publications.find(entry=>entry.id===id);form.reset();form.elements.id.value=id;$('#publication-form-error').textContent='';
   if(item){for(const key of ['title','authors','venue','year','url','summary','image_alt'])form.elements[key].value=item[key]||''}
-  $('#publication-compose-title').textContent=item?'编辑公开成果':'新增公开成果';$('#current-publication-image').textContent=item?.image?`当前代表图：${item.image}`:'当前没有代表图。';$('#remove-publication-image-label').hidden=!item?.image;$('#publication-compose-dialog').showModal();
+  $('#publication-compose-title').textContent=item?'编辑公开成果':'新增公开成果';$('#submit-publication').textContent=item?'保存修改':'保存成果';$('#current-publication-image').textContent=item?.image?'当前已有代表图；在上方重新选择图片即可替换。':'当前没有代表图。';$('#remove-publication-image-label').hidden=!item?.image;$('#publication-compose-dialog').showModal();
 }
 async function showProfile(){
   if(!state.user)return showAuth();const form=$('#profile-form');$('#profile-form-error').textContent='';
@@ -146,7 +147,7 @@ $('#literature-form').addEventListener('submit',async event=>{
 $('#publication-form').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,button=$('#submit-publication'),error=$('#publication-form-error'),id=form.elements.id.value;error.textContent='';button.disabled=true;button.textContent='正在保存…';
   try{const data=Object.fromEntries(['title','authors','venue','year','url','summary','image_alt'].map(key=>[key,form.elements[key].value.trim()]));data.remove_image=form.elements.remove_image.checked;const image=$('#publication-image').files[0];if(image){if(!image.size||image.size>5*1024*1024)throw new Error('代表图不能为空，且不能超过 5 MB。');data.image={name:image.name,data:await fileBase64(image)}}const result=await api(id?`/api/admin/publications/${encodeURIComponent(id)}`:'/api/admin/publications',jsonOptions('POST',data));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin();form.reset();$('#publication-compose-dialog').close();toast('成果已保存为待发布改动。')}
-  catch(err){error.textContent=err.message}finally{button.disabled=false;button.textContent='保存成果'}
+  catch(err){error.textContent=err.message}finally{button.disabled=false;button.textContent=id?'保存修改':'保存成果'}
 });
 $('#news-form').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,button=$('#submit-news'),error=$('#news-form-error'),index=form.elements.index.value;error.textContent='';button.disabled=true;button.textContent='正在保存…';

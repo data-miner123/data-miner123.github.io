@@ -18,7 +18,7 @@ function publicationCard(item,index){
   const imagePath=String(item.image||'');
   if(/^publication-assets\/[0-9a-f]{32}\.(png|jpg|webp)$/.test(imagePath)){
     const image=document.createElement('img');
-    image.src=`./${imagePath}`;
+    image.src=`./${imagePath}?v=${encodeURIComponent(item.updated_at||'')}`;
     image.alt=item.image_alt||`${item.title||'研究成果'}的代表图`;
     image.loading='lazy';
     figure.append(image);
@@ -49,7 +49,7 @@ function publicationCard(item,index){
 
 async function loadPublications(){
   try{
-    const response=await fetch('./publications.json',{cache:'no-store'});
+    const response=await fetch(`./publications.json?v=${Date.now()}`,{cache:'no-store'});
     if(!response.ok)throw new Error(`HTTP ${response.status}`);
     const items=await response.json();
     if(!Array.isArray(items))throw new Error('成果数据格式错误');

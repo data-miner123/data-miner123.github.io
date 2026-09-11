@@ -466,7 +466,7 @@ class Handler(BaseHTTPRequestHandler):
             if index is None: raise ApiError(404,'成果不存在。')
             previous=items[index]; old_image=previous.get('image',''); new_image=old_image
             if content is not None:
-                PUBLICATION_ASSETS.mkdir(parents=True,exist_ok=True); target=PUBLICATION_ASSETS/f'{publication_id}{extension}'; temporary=target.with_suffix(target.suffix+'.tmp'); temporary.write_bytes(content); os.replace(temporary,target); new_image=f'publication-assets/{target.name}'
+                PUBLICATION_ASSETS.mkdir(parents=True,exist_ok=True); target=PUBLICATION_ASSETS/f'{uuid4().hex}{extension}'; temporary=target.with_suffix(target.suffix+'.tmp'); temporary.write_bytes(content); os.replace(temporary,target); new_image=f'publication-assets/{target.name}'
             elif remove_image: new_image=''
             items[index]={**cleaned,'id':publication_id,'image':new_image,'created_at':previous.get('created_at',now_iso()),'updated_at':now_iso()}; write_publications(items)
             if old_image and old_image!=new_image and re.fullmatch(r'publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',old_image): (ROOT/old_image).unlink(missing_ok=True)
