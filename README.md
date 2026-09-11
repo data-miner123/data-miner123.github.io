@@ -2,7 +2,7 @@
 
 ## 日常发布公开成果
 
-管理员可在小组网站的“管理”页面新增、编辑、排序成果并上传代表图，然后点击“发布到 GitHub Pages”。日常发布不再需要进入服务器手工编辑 HTML。详细说明见 [`docs/publication-management.md`](docs/publication-management.md)。
+管理员可在小组网站的“管理”页面新增、编辑、排序成果，上传代表图和组内论文 PDF，然后点击“发布到 GitHub Pages”。公开信息会发布到 GitHub，PDF 只供登录成员在“小组成果”页面查看或下载。日常发布不再需要进入服务器手工编辑 HTML。详细说明见 [`docs/publication-management.md`](docs/publication-management.md)。
 
 关于修改数据更新
 服务器更新至GitHub：

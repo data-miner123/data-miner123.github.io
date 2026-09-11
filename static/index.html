@@ -18,6 +18,7 @@
         <a href="#home" data-nav="home">小组首页</a>
         <a href="#reports" data-nav="reports">研究日志</a>
         <a href="#literature" data-nav="literature">文献资料</a>
+        <a href="#publications" data-nav="publications">小组成果</a>
         <a href="#people" data-nav="people">小组成员</a>
         <a href="#admin" data-nav="admin" id="admin-nav" hidden>管理</a>
       </nav>
@@ -78,6 +79,10 @@
       <p id="literature-count" class="result-count" aria-live="polite"></p>
       <div id="literature-list" class="literature-list"></div>
     </section>
+    <section id="view-publications" class="view" hidden>
+      <div class="page-heading"><div><p class="eyebrow">GROUP PUBLICATIONS</p><h1>小组成果<span class="accent">.</span></h1><p>查看小组公开成果；登录成员可以直接在线阅读或下载组内论文 PDF。</p></div></div>
+      <div id="member-publications" class="member-publication-list"></div>
+    </section>
     <section id="view-people" class="view" hidden>
       <div class="page-heading"><div><p class="eyebrow">OUR PEOPLE</p><h1>小组成员<span class="accent">.</span></h1><p>共同思考，一起探索。</p></div></div>
       <p class="demo-note">以下为示例成员，请在 site.json 中替换为真实信息。</p>
@@ -86,7 +91,7 @@
     <section id="view-admin" class="view" hidden>
       <div class="page-heading"><div><p class="eyebrow">ADMINISTRATION</p><h1>管理后台<span class="accent">.</span></h1><p>维护小组动态、审核注册申请和管理研究资料。</p></div></div>
       <div class="admin-summary"><span id="pending-count">0 个待审核账号</span><span id="admin-report-count">0 份研究报告</span><span id="admin-literature-count">0 篇文献</span><span id="admin-publication-count">0 项公开成果</span></div>
-      <section class="admin-section"><div class="section-heading publication-admin-heading"><div><p class="eyebrow">GITHUB PAGES</p><h2>公开首页成果</h2></div><div class="row-actions"><button class="button" data-publication-compose>＋ 新增成果</button><button class="button primary" id="publish-publications" data-publish-publications>发布到 GitHub Pages ↗</button></div></div><p class="admin-help">在这里编辑的是公开首页的“小组成果”，与组内文献库相互独立。保存后先成为待发布改动，确认无误再推送到 GitHub。</p><p id="publication-publish-status" class="publish-status" role="status"></p><div id="admin-publications" class="admin-list"></div></section>
+      <section class="admin-section"><div class="section-heading publication-admin-heading"><div><p class="eyebrow">GITHUB PAGES</p><h2>公开首页成果</h2></div><div class="row-actions"><button class="button" data-publication-compose>＋ 新增成果</button><button class="button primary" id="publish-publications" data-publish-publications>发布到 GitHub Pages ↗</button></div></div><p class="admin-help">成果文字和代表图将发布到 GitHub Pages；论文 PDF 只保存在小组服务器，供登录成员查看和下载。</p><p id="publication-publish-status" class="publish-status" role="status"></p><div id="admin-publications" class="admin-list"></div></section>
       <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">NEWS</p><h2>小组动态</h2></div><button class="button primary" data-news-compose>＋ 发布动态</button></div><div id="admin-news" class="admin-list"></div></section>
       <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">PROFILE BINDING</p><h2>成员账号绑定</h2></div></div><p class="admin-help">将成员卡片与注册账号绑定后，对方即可登录并维护自己的个人信息。</p><div id="admin-members" class="admin-list"></div></section>
       <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">MEMBERS</p><h2>账号管理</h2></div></div><div id="admin-users" class="admin-list"></div></section>
@@ -136,6 +141,9 @@
       <label class="file-label">代表图 <span class="optional">JPG / PNG / WebP，最多 5 MB</span><input id="publication-image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="field-hint">修改代表图时直接选择一张新图片；不选择则保留原图。标题、作者等上方信息也可直接修改。</span></label>
       <p id="current-publication-image" class="field-hint"></p>
       <label id="remove-publication-image-label" class="inline-check" hidden><input name="remove_image" type="checkbox"> 删除当前代表图</label>
+      <label class="file-label">组内论文全文 <span class="optional">仅支持 PDF，最多 20 MB</span><input id="publication-paper" type="file" accept=".pdf,application/pdf"><span class="field-hint">文件不会上传到公开 GitHub，只允许已登录的小组成员查看和下载；编辑时不重新选择会保留原文件。</span></label>
+      <p id="current-publication-paper" class="field-hint"></p>
+      <label id="remove-publication-paper-label" class="inline-check" hidden><input name="remove_paper" type="checkbox"> 删除当前组内论文 PDF</label>
       <p id="publication-form-error" class="error-text" role="alert"></p>
       <div class="dialog-footer"><span>保存后不会立即改变 GitHub 首页</span><button type="submit" id="submit-publication" class="button primary">保存成果</button></div>
     </form>

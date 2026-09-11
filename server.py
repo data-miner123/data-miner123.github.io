@@ -9,7 +9,7 @@ from urllib.parse import quote, urlsplit
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parent
-MAX_FILE, MAX_LITERATURE_FILE, MAX_REQUEST, SESSION_DAYS = 5*1024*1024, 20*1024*1024, 30*1024*1024, 7
+MAX_FILE, MAX_LITERATURE_FILE, MAX_REQUEST, SESSION_DAYS = 5*1024*1024, 20*1024*1024, 40*1024*1024, 7
 EXTENSIONS = {'.pdf','.md','.txt','.docx','.pptx','.xlsx','.png','.jpg','.jpeg'}
 PUBLICATION_IMAGE_EXTENSIONS = {'.png','.jpg','.jpeg','.webp'}
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_.-]{3,32}$')
@@ -47,6 +47,7 @@ def initialize(seed=True):
         CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires_at TEXT NOT NULL,created_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS literature(id TEXT PRIMARY KEY,title TEXT NOT NULL,authors TEXT NOT NULL,source TEXT NOT NULL DEFAULT '',year TEXT NOT NULL DEFAULT '',url TEXT NOT NULL DEFAULT '',notes TEXT NOT NULL DEFAULT '',filename TEXT NOT NULL DEFAULT '',attachment BLOB,uploader TEXT NOT NULL,uploader_id TEXT REFERENCES users(id) ON DELETE SET NULL,created_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS literature_comments(id TEXT PRIMARY KEY,literature_id TEXT NOT NULL REFERENCES literature(id) ON DELETE CASCADE,author TEXT NOT NULL,author_id TEXT REFERENCES users(id) ON DELETE SET NULL,body TEXT NOT NULL,created_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS publication_files(publication_id TEXT PRIMARY KEY,filename TEXT NOT NULL,attachment BLOB NOT NULL,uploader_id TEXT REFERENCES users(id) ON DELETE SET NULL,updated_at TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS idx_reports_date ON reports(date DESC,created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
         CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
@@ -135,6 +136,12 @@ def write_publications(items):
     temporary.write_text(json.dumps(items,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     os.replace(temporary,PUBLICATIONS_PATH)
 
+def publications_with_files():
+    items=read_publications(); db=connect()
+    try: files={row['publication_id']:row['filename'] for row in db.execute('SELECT publication_id,filename FROM publication_files')}
+    finally: db.close()
+    return [{**item,'filename':files.get(item.get('id'),'')} for item in items]
+
 def clean_publication(data):
     item={key:clean(data,key,maximum,key in {'title','authors','venue','year'}) for key,maximum in {'title':250,'authors':500,'venue':200,'year':4,'summary':1500,'url':1000,'image_alt':300}.items()}
     if not re.fullmatch(r'\d{4}',item['year']): raise ApiError(400,'成果年份应为 4 位数字。')
@@ -160,6 +167,18 @@ def decode_publication_image(data):
     allowed_extensions={'.jpg','.jpeg'} if detected=='.jpg' else {detected}
     if not detected or extension not in allowed_extensions: raise ApiError(400,'代表图扩展名与实际文件类型不一致。')
     return detected,content
+
+def decode_publication_paper(data):
+    paper=data.get('paper')
+    if not paper: return '',None
+    if not isinstance(paper,dict) or not isinstance(paper.get('name'),str) or not isinstance(paper.get('data'),str): raise ApiError(400,'论文文件格式不正确。')
+    filename=paper['name'].replace('\\','/').split('/')[-1]
+    if not filename or len(filename)>180 or any(ord(c)<32 for c in filename) or Path(filename).suffix.lower()!='.pdf': raise ApiError(400,'论文文件仅支持 PDF。')
+    try: attachment=base64.b64decode(paper['data'],validate=True)
+    except binascii.Error: raise ApiError(400,'论文文件内容不正确。')
+    if not attachment or len(attachment)>MAX_LITERATURE_FILE: raise ApiError(400,'论文 PDF 不能为空，且不能超过 20 MB。')
+    if not attachment.startswith(b'%PDF-'): raise ApiError(400,'上传的文件不是有效的 PDF。')
+    return filename,attachment
 
 def publication_changes_pending():
     result=subprocess.run(['git','-C',str(ROOT),'status','--porcelain','--','publications.json','publication-assets'],capture_output=True,text=True,timeout=10)
@@ -241,6 +260,8 @@ class Handler(BaseHTTPRequestHandler):
                 try: rows=db.execute('''SELECT literature.id,title,authors,source,year,url,notes,filename,uploader,uploader_id,literature.created_at,COUNT(literature_comments.id) AS comment_count FROM literature LEFT JOIN literature_comments ON literature_comments.literature_id=literature.id GROUP BY literature.id ORDER BY literature.created_at DESC''').fetchall()
                 finally: db.close()
                 self.respond(200,[dict(r) for r in rows])
+            elif path=='/api/publications':
+                self.require_user(); self.respond(200,publications_with_files())
             elif path=='/api/admin/users':
                 self.require_user(True); db=connect()
                 try: rows=db.execute("SELECT id,username,display_name,role,status,created_at FROM users ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END,created_at").fetchall()
@@ -251,7 +272,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(members,list): raise ApiError(500,'小组成员配置格式不正确。')
                 self.respond(200,members)
             elif path=='/api/admin/publications':
-                self.require_user(True); self.respond(200,{'items':read_publications(),'pending_changes':publication_changes_pending()})
+                self.require_user(True); self.respond(200,{'items':publications_with_files(),'pending_changes':publication_changes_pending()})
             elif re.fullmatch(r'/api/reports/[0-9a-f]{32}(/attachment)?',path):
                 self.require_user(); report_id=path.split('/')[3]; db=connect()
                 try: row=db.execute('SELECT * FROM reports WHERE id=?',(report_id,)).fetchone()
@@ -274,8 +295,14 @@ class Handler(BaseHTTPRequestHandler):
                     self.respond(200,row['attachment'],mime,{'Content-Disposition':f"{disposition}; filename=literature; filename*=UTF-8''"+quote(row['filename'],safe='')})
                 else:
                     item={k:row[k] for k in row.keys() if k!='attachment'}; item['comments']=[dict(comment) for comment in comments]; self.respond(200,item)
+            elif re.fullmatch(r'/api/publications/[0-9a-f]{32}/attachment',path):
+                self.require_user(); publication_id=path.split('/')[3]; db=connect()
+                try: row=db.execute('SELECT filename,attachment FROM publication_files WHERE publication_id=?',(publication_id,)).fetchone()
+                finally: db.close()
+                if not row: raise ApiError(404,'这项成果尚未上传组内论文 PDF。')
+                self.respond(200,row['attachment'],'application/pdf',{'Content-Disposition':"inline; filename=paper.pdf; filename*=UTF-8''"+quote(row['filename'],safe='')})
             elif re.fullmatch(r'/publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',path):
-                self.require_user(True); file=ROOT/path.lstrip('/')
+                self.require_user(); file=ROOT/path.lstrip('/')
                 if not file.is_file(): raise ApiError(404,'代表图不存在。')
                 self.respond(200,file.read_bytes(),mimetypes.guess_type(file.name)[0] or 'application/octet-stream')
             else:
@@ -450,7 +477,7 @@ class Handler(BaseHTTPRequestHandler):
             news.pop(index); write_site(site)
         self.respond(200,{'news':news})
     def create_publication(self,data):
-        self.require_user(True); item=clean_publication(data); extension,content=decode_publication_image(data); publication_id=uuid4().hex
+        user=self.require_user(True); item=clean_publication(data); extension,content=decode_publication_image(data); paper_name,paper=decode_publication_paper(data); publication_id=uuid4().hex
         item.update({'id':publication_id,'image':'','created_at':now_iso(),'updated_at':now_iso()})
         with PUBLICATION_LOCK:
             items=read_publications()
@@ -458,9 +485,14 @@ class Handler(BaseHTTPRequestHandler):
             if content is not None:
                 PUBLICATION_ASSETS.mkdir(parents=True,exist_ok=True); target=PUBLICATION_ASSETS/f'{publication_id}{extension}'; temporary=target.with_suffix(target.suffix+'.tmp'); temporary.write_bytes(content); os.replace(temporary,target); item['image']=f'publication-assets/{target.name}'
             items.insert(0,item); write_publications(items)
-        self.respond(201,{'items':items,'pending_changes':True})
+            if paper is not None:
+                db=connect()
+                try:
+                    with db: db.execute('INSERT INTO publication_files(publication_id,filename,attachment,uploader_id,updated_at) VALUES(?,?,?,?,?)',(publication_id,paper_name,paper,user['id'],now_iso()))
+                finally: db.close()
+        self.respond(201,{'items':publications_with_files(),'pending_changes':True})
     def update_publication(self,path,data):
-        self.require_user(True); publication_id=path.rsplit('/',1)[1]; cleaned=clean_publication(data); extension,content=decode_publication_image(data); remove_image=data.get('remove_image') is True
+        user=self.require_user(True); publication_id=path.rsplit('/',1)[1]; cleaned=clean_publication(data); extension,content=decode_publication_image(data); paper_name,paper=decode_publication_paper(data); remove_image=data.get('remove_image') is True; remove_paper=data.get('remove_paper') is True
         with PUBLICATION_LOCK:
             items=read_publications(); index=next((i for i,item in enumerate(items) if item.get('id')==publication_id),None)
             if index is None: raise ApiError(404,'成果不存在。')
@@ -470,7 +502,14 @@ class Handler(BaseHTTPRequestHandler):
             elif remove_image: new_image=''
             items[index]={**cleaned,'id':publication_id,'image':new_image,'created_at':previous.get('created_at',now_iso()),'updated_at':now_iso()}; write_publications(items)
             if old_image and old_image!=new_image and re.fullmatch(r'publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',old_image): (ROOT/old_image).unlink(missing_ok=True)
-        self.respond(200,{'items':items,'pending_changes':True})
+            if paper is not None or remove_paper:
+                db=connect()
+                try:
+                    with db:
+                        if paper is not None: db.execute('INSERT INTO publication_files(publication_id,filename,attachment,uploader_id,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(publication_id) DO UPDATE SET filename=excluded.filename,attachment=excluded.attachment,uploader_id=excluded.uploader_id,updated_at=excluded.updated_at',(publication_id,paper_name,paper,user['id'],now_iso()))
+                        else: db.execute('DELETE FROM publication_files WHERE publication_id=?',(publication_id,))
+                finally: db.close()
+        self.respond(200,{'items':publications_with_files(),'pending_changes':True})
     def delete_publication(self,path):
         self.require_user(True); publication_id=path.split('/')[4]
         with PUBLICATION_LOCK:
@@ -478,7 +517,11 @@ class Handler(BaseHTTPRequestHandler):
             if index is None: raise ApiError(404,'成果不存在。')
             removed=items.pop(index); write_publications(items); image=removed.get('image','')
             if image and re.fullmatch(r'publication-assets/[0-9a-f]{32}\.(png|jpg|webp)',image): (ROOT/image).unlink(missing_ok=True)
-        self.respond(200,{'items':items,'pending_changes':True})
+            db=connect()
+            try:
+                with db: db.execute('DELETE FROM publication_files WHERE publication_id=?',(publication_id,))
+            finally: db.close()
+        self.respond(200,{'items':publications_with_files(),'pending_changes':True})
     def move_publication(self,path,data):
         self.require_user(True); publication_id=path.split('/')[4]; direction=clean(data,'direction',4)
         if direction not in {'up','down'}: raise ApiError(400,'排序方向不正确。')
@@ -487,7 +530,7 @@ class Handler(BaseHTTPRequestHandler):
             if index is None: raise ApiError(404,'成果不存在。')
             target=index+(-1 if direction=='up' else 1)
             if 0<=target<len(items): items[index],items[target]=items[target],items[index]; write_publications(items)
-        self.respond(200,{'items':items,'pending_changes':publication_changes_pending()})
+        self.respond(200,{'items':publications_with_files(),'pending_changes':publication_changes_pending()})
     def publish_publications(self):
         self.require_user(True)
         with PUBLICATION_LOCK:

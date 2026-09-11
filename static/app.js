@@ -25,7 +25,16 @@ function literatureRow(item,admin=false){
 function publicationAdminRow(item,index){
   const version=encodeURIComponent(item.updated_at||'');
   const image=item.image?`<img class="admin-publication-thumb" src="/${esc(item.image)}?v=${version}" alt="">`:'<div class="admin-publication-thumb is-empty">无代表图</div>';
-  return `<article class="admin-row publication-admin-row">${image}<div class="admin-publication-copy"><h3>${esc(item.title)}</h3><p>${esc(item.authors)} · ${esc(item.venue)} · ${esc(item.year)}</p></div><div class="row-actions"><button class="button" data-move-publication="up" data-publication-id="${esc(item.id)}" ${index===0?'disabled':''}>上移</button><button class="button" data-move-publication="down" data-publication-id="${esc(item.id)}" ${index===state.publications.length-1?'disabled':''}>下移</button><button class="button" data-edit-publication="${esc(item.id)}">编辑</button><button class="button danger" data-delete-publication="${esc(item.id)}" data-title="${esc(item.title)}">删除</button></div></article>`;
+  const fileStatus=item.filename?`组内全文：${esc(item.filename)}`:'尚未上传组内论文 PDF';
+  return `<article class="admin-row publication-admin-row">${image}<div class="admin-publication-copy"><h3>${esc(item.title)}</h3><p>${esc(item.authors)} · ${esc(item.venue)} · ${esc(item.year)}</p><p>${fileStatus}</p></div><div class="row-actions">${item.filename?`<a class="button" href="/api/publications/${esc(item.id)}/attachment" target="_blank" rel="noopener">查看 PDF</a>`:''}<button class="button" data-move-publication="up" data-publication-id="${esc(item.id)}" ${index===0?'disabled':''}>上移</button><button class="button" data-move-publication="down" data-publication-id="${esc(item.id)}" ${index===state.publications.length-1?'disabled':''}>下移</button><button class="button" data-edit-publication="${esc(item.id)}">编辑</button><button class="button danger" data-delete-publication="${esc(item.id)}" data-title="${esc(item.title)}">删除</button></div></article>`;
+}
+function publicationMemberRow(item){
+  const version=encodeURIComponent(item.updated_at||'');
+  const imagePath=String(item.image||'');
+  const image=/^publication-assets\/[0-9a-f]{32}\.(png|jpg|webp)$/.test(imagePath)?`<img class="member-publication-image" src="/${esc(imagePath)}?v=${version}" alt="${esc(item.image_alt||'')}">`:'<div class="member-publication-image is-empty">暂无代表图</div>';
+  const paper=item.filename?`<a class="button primary" href="/api/publications/${esc(item.id)}/attachment" target="_blank" rel="noopener">查看 / 下载 PDF ↗</a>`:'<span class="member-publication-no-file">暂未上传组内全文</span>';
+  const official=item.url?`<a class="button" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">访问论文页面 ↗</a>`:'';
+  return `<article class="member-publication-card">${image}<div class="member-publication-copy"><p class="eyebrow">${esc(item.venue)} · ${esc(item.year)}</p><h2>${esc(item.title)}</h2><p class="member-publication-authors">${esc(item.authors)}</p>${item.summary?`<p class="member-publication-summary">${esc(item.summary)}</p>`:''}<div class="member-publication-actions">${paper}${official}</div></div></article>`;
 }
 function renderReports(){
   if(!state.user){
@@ -48,6 +57,10 @@ function renderLiterature(){
   const rows=state.literature.filter(item=>`${item.title} ${item.authors} ${item.source} ${item.year} ${item.notes}`.toLocaleLowerCase().includes(q));
   $('#literature-count').textContent=`共 ${rows.length} 篇文献`;
   $('#literature-list').innerHTML=rows.map(item=>literatureRow(item)).join('')||'<p class="empty-state">暂无符合条件的文献，上传第一篇开始讨论吧。</p>';
+}
+function renderPublications(){
+  if(!state.user){$('#member-publications').innerHTML='<div class="empty-state"><h3>登录后查看和下载小组成果</h3><p>论文全文仅供审核通过的小组成员使用。</p><button class="button primary" data-auth>登录 / 注册</button></div>';return}
+  $('#member-publications').innerHTML=state.publications.map(publicationMemberRow).join('')||'<p class="empty-state">暂时还没有小组成果。</p>';
 }
 function renderAccount(){
   const logged=Boolean(state.user); $('#login-button').hidden=logged; $('#logout-button').hidden=!logged; $('#profile-button').hidden=!logged; $('#account-name').hidden=!logged;
@@ -74,15 +87,16 @@ function renderAdmin(){
 }
 async function loadAdmin(){if(state.user?.role!=='admin')return;try{const [users,members,publications]=await Promise.all([api('/api/admin/users'),api('/api/admin/members'),api('/api/admin/publications')]);state.users=users;state.adminMembers=members;state.publications=publications.items;state.publicationPending=publications.pending_changes;renderAdmin()}catch(e){toast(e.message)}}
 function route(){
-  let page=['home','reports','literature','people','admin'].includes(location.hash.slice(1))?location.hash.slice(1):'home';
+  let page=['home','reports','literature','publications','people','admin'].includes(location.hash.slice(1))?location.hash.slice(1):'home';
   if(page==='admin'&&state.user?.role!=='admin')page='home';
   $$('.view').forEach(view=>view.hidden=view.id!==`view-${page}`||!state.site);$$('[data-nav]').forEach(link=>link.dataset.nav===page?link.setAttribute('aria-current','page'):link.removeAttribute('aria-current'));
-  document.title=`${state.site?.name||'VIS Group'} · ${{home:'小组主页',reports:'研究日志',literature:'文献资料',people:'小组成员',admin:'管理后台'}[page]}`;
+  document.title=`${state.site?.name||'VIS Group'} · ${{home:'小组主页',reports:'研究日志',literature:'文献资料',publications:'小组成果',people:'小组成员',admin:'管理后台'}[page]}`;
   if(page==='admin')loadAdmin();
 }
 async function refreshReports(){state.reports=state.user?await api('/api/reports'):[];renderReports();if(state.user?.role==='admin')renderAdmin()}
 async function refreshLiterature(){state.literature=state.user?await api('/api/literature'):[];renderLiterature();if(state.user?.role==='admin')renderAdmin()}
-async function refreshContent(){await Promise.all([refreshReports(),refreshLiterature()])}
+async function refreshPublications(){state.publications=state.user?await api('/api/publications'):[];renderPublications();if(state.user?.role==='admin')renderAdmin()}
+async function refreshContent(){await Promise.all([refreshReports(),refreshLiterature(),refreshPublications()])}
 async function load(){
   $('#page-status').hidden=false;$('#page-status').textContent='正在读取小组信息…';
   try{const [site,session]=await Promise.all([api('/api/site'),api('/api/auth/me')]);state.site=site;state.user=session.user;renderSite();renderAccount();await refreshContent();route();$('#page-status').hidden=true}
@@ -103,7 +117,7 @@ function composeNews(index=null){
 function composePublication(id=''){
   if(state.user?.role!=='admin')return;const form=$('#publication-form'),item=state.publications.find(entry=>entry.id===id);form.reset();form.elements.id.value=id;$('#publication-form-error').textContent='';
   if(item){for(const key of ['title','authors','venue','year','url','summary','image_alt'])form.elements[key].value=item[key]||''}
-  $('#publication-compose-title').textContent=item?'编辑公开成果':'新增公开成果';$('#submit-publication').textContent=item?'保存修改':'保存成果';$('#current-publication-image').textContent=item?.image?'当前已有代表图；在上方重新选择图片即可替换。':'当前没有代表图。';$('#remove-publication-image-label').hidden=!item?.image;$('#publication-compose-dialog').showModal();
+  $('#publication-compose-title').textContent=item?'编辑公开成果':'新增公开成果';$('#submit-publication').textContent=item?'保存修改':'保存成果';$('#current-publication-image').textContent=item?.image?'当前已有代表图；在上方重新选择图片即可替换。':'当前没有代表图。';$('#remove-publication-image-label').hidden=!item?.image;$('#current-publication-paper').textContent=item?.filename?`当前组内全文：${item.filename}`:'当前没有组内论文 PDF。';$('#remove-publication-paper-label').hidden=!item?.filename;$('#publication-compose-dialog').showModal();
 }
 async function showProfile(){
   if(!state.user)return showAuth();const form=$('#profile-form');$('#profile-form-error').textContent='';
@@ -146,7 +160,7 @@ $('#literature-form').addEventListener('submit',async event=>{
 });
 $('#publication-form').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,button=$('#submit-publication'),error=$('#publication-form-error'),id=form.elements.id.value;error.textContent='';button.disabled=true;button.textContent='正在保存…';
-  try{const data=Object.fromEntries(['title','authors','venue','year','url','summary','image_alt'].map(key=>[key,form.elements[key].value.trim()]));data.remove_image=form.elements.remove_image.checked;const image=$('#publication-image').files[0];if(image){if(!image.size||image.size>5*1024*1024)throw new Error('代表图不能为空，且不能超过 5 MB。');data.image={name:image.name,data:await fileBase64(image)}}const result=await api(id?`/api/admin/publications/${encodeURIComponent(id)}`:'/api/admin/publications',jsonOptions('POST',data));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin();form.reset();$('#publication-compose-dialog').close();toast('成果已保存为待发布改动。')}
+  try{const data=Object.fromEntries(['title','authors','venue','year','url','summary','image_alt'].map(key=>[key,form.elements[key].value.trim()]));data.remove_image=form.elements.remove_image.checked;data.remove_paper=form.elements.remove_paper.checked;const image=$('#publication-image').files[0],paper=$('#publication-paper').files[0];if(image){if(!image.size||image.size>5*1024*1024)throw new Error('代表图不能为空，且不能超过 5 MB。');data.image={name:image.name,data:await fileBase64(image)}}if(paper){if(!paper.size||paper.size>20*1024*1024)throw new Error('论文 PDF 不能为空，且不能超过 20 MB。');if(!paper.name.toLowerCase().endsWith('.pdf'))throw new Error('组内论文全文仅支持 PDF。');data.paper={name:paper.name,data:await fileBase64(paper)}}const result=await api(id?`/api/admin/publications/${encodeURIComponent(id)}`:'/api/admin/publications',jsonOptions('POST',data));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin();renderPublications();form.reset();$('#publication-compose-dialog').close();toast('成果已保存；组内 PDF 已可供成员使用。')}
   catch(err){error.textContent=err.message}finally{button.disabled=false;button.textContent=id?'保存修改':'保存成果'}
 });
 $('#news-form').addEventListener('submit',async event=>{
@@ -166,8 +180,8 @@ $('#comment-form').addEventListener('submit',async event=>{
 async function userAction(button){const action=button.dataset.userAction,user=button.dataset.user;if(!confirm(action==='disable'?'确定停用这个账号吗？':'确定执行此操作吗？'))return;try{await api(`/api/admin/users/${user}/${action}`,jsonOptions('POST',{role:button.dataset.role||''}));await loadAdmin();toast('成员账号已更新。')}catch(e){toast(e.message)}}
 async function deleteReport(button){if(!confirm(`确定删除“${button.dataset.title}”吗？附件也会一并删除，此操作无法撤销。`))return;try{await api(`/api/reports/${button.dataset.deleteReport}`,jsonOptions('DELETE',{}));await refreshReports();toast('报告已删除。')}catch(e){toast(e.message)}}
 async function deleteLiterature(button){if(!confirm(`确定删除文献“${button.dataset.title}”吗？附件和全部评论也会一并删除。`))return;try{await api(`/api/literature/${button.dataset.deleteLiterature}`,jsonOptions('DELETE',{}));await refreshLiterature();toast('文献已删除。')}catch(e){toast(e.message)}}
-async function deletePublication(button){if(!confirm(`确定删除公开成果“${button.dataset.title}”吗？代表图也会删除；之后仍需点击发布。`))return;try{const result=await api(`/api/admin/publications/${button.dataset.deletePublication}/delete`,jsonOptions('POST',{}));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin();toast('成果已删除，等待发布。')}catch(e){toast(e.message)}}
-async function movePublication(button){button.disabled=true;try{const result=await api(`/api/admin/publications/${button.dataset.publicationId}/move`,jsonOptions('POST',{direction:button.dataset.movePublication}));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin()}catch(e){toast(e.message);button.disabled=false}}
+async function deletePublication(button){if(!confirm(`确定删除公开成果“${button.dataset.title}”吗？代表图和组内 PDF 也会删除；之后仍需点击发布。`))return;try{const result=await api(`/api/admin/publications/${button.dataset.deletePublication}/delete`,jsonOptions('POST',{}));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin();renderPublications();toast('成果已删除，等待发布。')}catch(e){toast(e.message)}}
+async function movePublication(button){button.disabled=true;try{const result=await api(`/api/admin/publications/${button.dataset.publicationId}/move`,jsonOptions('POST',{direction:button.dataset.movePublication}));state.publications=result.items;state.publicationPending=result.pending_changes;renderAdmin();renderPublications()}catch(e){toast(e.message);button.disabled=false}}
 async function publishPublications(button){if(!confirm('确定把当前成果列表和代表图发布到 GitHub Pages 吗？'))return;button.disabled=true;button.textContent='正在发布…';try{const result=await api('/api/admin/publications/publish',jsonOptions('POST',{}));state.publicationPending=false;renderAdmin();toast(result.message)}catch(e){toast(e.message);button.disabled=false}finally{button.textContent='发布到 GitHub Pages ↗'}}
 async function deleteNews(button){if(!confirm(`确定删除动态“${button.dataset.title}”吗？此操作无法撤销。`))return;try{const result=await api(`/api/admin/news/${button.dataset.deleteNews}/delete`,jsonOptions('POST',{}));state.site.news=result.news;renderSite();renderAdmin();toast('动态已删除。')}catch(e){toast(e.message)}}
 async function bindMember(button){const index=button.dataset.bindMember,select=$(`[data-member-account="${index}"]`);button.disabled=true;try{const result=await api(`/api/admin/members/${index}/bind`,jsonOptions('POST',{user_id:select.value}));state.adminMembers=result.members;renderAdmin();toast(select.value?'成员账号已绑定。':'成员账号已解除绑定。')}catch(e){toast(e.message);button.disabled=false}}
@@ -178,5 +192,5 @@ document.addEventListener('click',event=>{
 });
 $('#login-button').addEventListener('click',()=>showAuth());$('#login-tab').addEventListener('click',()=>showAuth(false));$('#register-tab').addEventListener('click',()=>showAuth(true));
 $('#profile-button').addEventListener('click',showProfile);
-$('#logout-button').addEventListener('click',async()=>{try{await api('/api/auth/logout',jsonOptions('POST',{}));state.user=null;state.reports=[];state.literature=[];state.publications=[];state.publicationPending=false;state.users=[];state.adminMembers=[];renderAccount();renderReports();renderLiterature();location.hash='home';route();toast('已退出登录。')}catch(e){toast(e.message)}});
+$('#logout-button').addEventListener('click',async()=>{try{await api('/api/auth/logout',jsonOptions('POST',{}));state.user=null;state.reports=[];state.literature=[];state.publications=[];state.publicationPending=false;state.users=[];state.adminMembers=[];renderAccount();renderReports();renderLiterature();renderPublications();location.hash='home';route();toast('已退出登录。')}catch(e){toast(e.message)}});
 $('#detail-dialog').addEventListener('close',()=>state.detailRequest++);$('#literature-detail-dialog').addEventListener('close',()=>{state.literatureRequest++;state.currentLiterature=null});$('#search').addEventListener('input',event=>{state.query=event.target.value.trim();renderReports()});$('#literature-search').addEventListener('input',event=>{state.literatureQuery=event.target.value.trim();renderLiterature()});window.addEventListener('hashchange',()=>{route();window.scrollTo(0,0)});load();

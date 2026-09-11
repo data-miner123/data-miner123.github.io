@@ -5,7 +5,7 @@
 项目中有两套彼此独立的页面：
 
 - 根目录 `index.html` 发布在 `https://data-miner123.github.io/`，用于公开展示小组简介、研究方向和成果。
-- `static/index.html` 运行在实验室服务器，用于成员登录、研究日志、文献讨论和管理员操作。
+- `static/index.html` 运行在小组服务器，用于成员登录、研究日志、文献讨论、成果全文下载和管理员操作。
 
 管理员后台不会把服务器页面替换成公开页面，也不会直接拼接或重写公开首页 HTML。公开首页的成果区从 `publications.json` 读取数据，代表图保存在 `publication-assets/`。后台只管理这两部分内容。
 
@@ -16,10 +16,11 @@
 3. 在“公开首页成果”中点击“新增成果”。
 4. 填写标题、作者、期刊或会议、年份，可选填论文链接和成果简介。
 5. 上传一张 JPG、PNG 或 WebP 代表图，文件最大 5 MB。推荐使用论文总览图、系统界面或核心结果图。
-6. 点击“保存成果”。此时只保存为服务器上的待发布改动，GitHub Pages 不会立即变化。
-7. 可以继续编辑、删除或使用“上移/下移”调整公开首页顺序。
-8. 确认无误后点击“发布到 GitHub Pages”。后台会自动提交并推送 `publications.json` 和 `publication-assets/`。
-9. GitHub Pages 通常在几分钟内更新，随后刷新 `https://data-miner123.github.io/#publications` 查看。
+6. 可以上传不超过 20 MB 的论文 PDF。PDF 只保存在小组服务器，登录成员可在“小组成果”页面查看或下载，不会公开到 GitHub。
+7. 点击“保存成果”。组内 PDF 会立即可用；公开文字和代表图先保存为服务器上的待发布改动，GitHub Pages 不会立即变化。
+8. 可以继续编辑、删除或使用“上移/下移”调整公开首页顺序，也可以替换或删除组内 PDF。
+9. 确认无误后点击“发布到 GitHub Pages”。后台会自动提交并推送 `publications.json` 和 `publication-assets/`。
+10. GitHub Pages 通常在几分钟内更新，随后刷新 `https://data-miner123.github.io/#publications` 查看。
 
 ## 让其他人维护
 
@@ -36,11 +37,10 @@ publications.json
 publication-assets/
 ```
 
-数据库、账号、密码散列、成员报告和组内文献附件位于 `data/`，已被 `.gitignore` 排除，不会通过成果发布功能上传到 GitHub。
+数据库、账号、密码散列、成员报告、组内文献附件和成果 PDF 位于 `data/`，已被 `.gitignore` 排除，不会通过成果发布功能上传到 GitHub。成果 PDF 下载接口要求成员登录。
 
 公开成果删除后，必须再次点击“发布到 GitHub Pages”，远端页面才会同步删除。发布失败时后台会显示 Git 错误；已填写的数据仍保留在服务器，可以排查后重新发布。
 
 ## 首次功能部署与普通成果发布的区别
 
 这套管理功能本身涉及 `server.py`、后台页面和公开首页代码，因此首次上线仍需由开发者提交一次代码。功能上线后，日常新增或修改成果不再需要进入 VS Code，也不需要手工编辑 HTML。
-
