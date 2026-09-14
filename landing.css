@@ -140,8 +140,8 @@ button:focus-visible {
 }
 
 .primary-button {
-  min-height: 50px;
-  padding: 0 24px;
+  min-height: 44px;
+  padding: 0 20px;
 }
 
 .header-button:hover,
@@ -172,17 +172,16 @@ button:focus-visible {
 }
 
 .hero {
-  min-height: calc(100vh - 79px);
-  padding: 96px 0 88px;
+  min-height: auto;
+  padding: 58px 0 56px;
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: 80px;
-  align-items: start;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 52px;
+  align-items: center;
 }
 
 .hero-identity {
-  position: sticky;
-  top: 126px;
+  position: static;
 }
 
 .logo-card {
@@ -200,7 +199,7 @@ button:focus-visible {
 }
 
 .contact-summary {
-  margin-top: 22px;
+  margin-top: 15px;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.65;
@@ -220,7 +219,7 @@ button:focus-visible {
 }
 
 .eyebrow {
-  margin: 0 0 15px;
+  margin: 0 0 10px;
   color: var(--accent);
   font-size: 12px;
   font-weight: 800;
@@ -228,9 +227,9 @@ button:focus-visible {
 }
 
 .hero h1 {
-  margin: 0 0 32px;
+  margin: 0 0 20px;
   font-family: Georgia, "Songti SC", "Times New Roman", serif;
-  font-size: clamp(46px, 7vw, 82px);
+  font-size: clamp(42px, 5.5vw, 64px);
   font-weight: 500;
   line-height: 1.04;
   letter-spacing: -0.04em;
@@ -238,7 +237,7 @@ button:focus-visible {
 
 .hero h1 span {
   display: block;
-  margin-top: 17px;
+  margin-top: 10px;
   color: var(--muted);
   font-family:
     Inter,
@@ -246,27 +245,27 @@ button:focus-visible {
     BlinkMacSystemFont,
     "PingFang SC",
     sans-serif;
-  font-size: clamp(19px, 2.2vw, 28px);
+  font-size: clamp(18px, 2vw, 24px);
   font-weight: 500;
   letter-spacing: 0;
 }
 
 .hero-content > p {
   max-width: 760px;
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   color: #46515c;
 }
 
 .hero-content .hero-lead {
-  margin-bottom: 24px;
+  margin-bottom: 15px;
   color: var(--ink);
   font-family: Georgia, "Songti SC", serif;
-  font-size: clamp(21px, 2.5vw, 29px);
-  line-height: 1.55;
+  font-size: clamp(19px, 2.2vw, 24px);
+  line-height: 1.5;
 }
 
 .hero-actions {
-  margin-top: 38px;
+  margin-top: 24px;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -285,10 +284,10 @@ button:focus-visible {
 }
 
 .content-section {
-  padding: 96px 0;
+  padding: 58px 0;
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
-  gap: 80px;
+  grid-template-columns: 115px minmax(0, 1fr);
+  gap: 42px;
   border-top: 1px solid var(--line);
 }
 
@@ -300,7 +299,7 @@ button:focus-visible {
   display: block;
   color: var(--accent);
   font-family: Georgia, serif;
-  font-size: 38px;
+  font-size: 29px;
   line-height: 1;
 }
 
@@ -312,9 +311,9 @@ button:focus-visible {
 }
 
 .section-content h2 {
-  margin: 0 0 36px;
+  margin: 0 0 20px;
   font-family: Georgia, "Songti SC", serif;
-  font-size: clamp(34px, 5vw, 54px);
+  font-size: clamp(29px, 4vw, 40px);
   font-weight: 500;
   line-height: 1.15;
 }
@@ -322,7 +321,7 @@ button:focus-visible {
 .prose {
   max-width: 790px;
   color: #46515c;
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .prose p {
@@ -330,7 +329,7 @@ button:focus-visible {
 }
 
 .facts {
-  margin-top: 48px;
+  margin-top: 25px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--line);
@@ -338,8 +337,8 @@ button:focus-visible {
 }
 
 .fact {
-  min-height: 134px;
-  padding: 25px 22px;
+  min-height: 86px;
+  padding: 15px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -366,27 +365,37 @@ button:focus-visible {
 }
 
 .research-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 .research-item {
-  padding: 35px 0;
-  display: grid;
-  grid-template-columns: 70px minmax(0, 1fr);
-  gap: 26px;
-  border-bottom: 1px solid var(--line);
+  padding: 22px 20px;
+  display: block;
+  border-right: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.research-item:first-child {
+  padding-left: 0;
+}
+
+.research-item:last-child {
+  border-right: 0;
 }
 
 .research-number {
   color: var(--accent);
   font-family: Georgia, serif;
-  font-size: 20px;
+  font-size: 15px;
 }
 
 .research-item h3 {
-  margin: 0 0 10px;
+  margin: 7px 0;
   font-family: Georgia, "Songti SC", serif;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 500;
 }
 
@@ -394,6 +403,8 @@ button:focus-visible {
   max-width: 720px;
   margin: 0;
   color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .tags {
@@ -556,8 +567,8 @@ button:focus-visible {
   }
 
   .hero {
-    grid-template-columns: 190px minmax(0, 1fr);
-    gap: 42px;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 34px;
   }
 
   .content-section {
@@ -587,13 +598,13 @@ button:focus-visible {
 
   .hero {
     min-height: auto;
-    padding: 54px 0 68px;
+    padding: 36px 0 42px;
     display: block;
   }
 
   .hero-identity {
     position: static;
-    margin-bottom: 45px;
+    margin-bottom: 28px;
     display: grid;
     grid-template-columns: 105px minmax(0, 1fr);
     gap: 20px;
@@ -605,21 +616,22 @@ button:focus-visible {
   }
 
   .hero h1 {
-    font-size: 45px;
+    font-size: 40px;
   }
 
   .hero-actions {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .content-section {
-    padding: 68px 0;
+    padding: 42px 0;
     display: block;
   }
 
   .section-label {
-    margin-bottom: 29px;
+    margin-bottom: 18px;
     display: flex;
     align-items: center;
     gap: 13px;
@@ -649,8 +661,17 @@ button:focus-visible {
   }
 
   .research-item {
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 14px;
+    padding: 18px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .research-item:last-child {
+    border-bottom: 0;
+  }
+
+  .research-list {
+    grid-template-columns: 1fr;
   }
 
   .publication-item {
