@@ -251,8 +251,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path=='/api/profile':
                 self.get_profile()
             elif path=='/api/reports':
-                self.require_user(); db=connect()
-                try: rows=db.execute('SELECT id,title,author,kind,date,summary,filename,example,created_at,user_id FROM reports ORDER BY date DESC,created_at DESC').fetchall()
+                user=self.require_user(); db=connect()
+                try:
+                    if user['role']=='admin':
+                        rows=db.execute('SELECT id,title,author,kind,date,summary,filename,example,created_at,user_id FROM reports ORDER BY date DESC,created_at DESC').fetchall()
+                    else:
+                        rows=db.execute('SELECT id,title,author,kind,date,summary,filename,example,created_at,user_id FROM reports WHERE user_id=? ORDER BY date DESC,created_at DESC',(user['id'],)).fetchall()
                 finally: db.close()
                 self.respond(200,[dict(r) for r in rows])
             elif path=='/api/literature':
@@ -274,10 +278,10 @@ class Handler(BaseHTTPRequestHandler):
             elif path=='/api/admin/publications':
                 self.require_user(True); self.respond(200,{'items':publications_with_files(),'pending_changes':publication_changes_pending()})
             elif re.fullmatch(r'/api/reports/[0-9a-f]{32}(/attachment)?',path):
-                self.require_user(); report_id=path.split('/')[3]; db=connect()
+                user=self.require_user(); report_id=path.split('/')[3]; db=connect()
                 try: row=db.execute('SELECT * FROM reports WHERE id=?',(report_id,)).fetchone()
                 finally: db.close()
-                if not row: raise ApiError(404,'报告不存在。')
+                if not row or (user['role']!='admin' and row['user_id']!=user['id']): raise ApiError(404,'报告不存在。')
                 if path.endswith('/attachment'):
                     if row['attachment'] is None: raise ApiError(404,'这份报告没有附件。')
                     self.respond(200,row['attachment'],'application/octet-stream',{'Content-Disposition':"attachment; filename=report-attachment; filename*=UTF-8''"+quote(row['filename'],safe='')})

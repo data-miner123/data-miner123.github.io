@@ -37,6 +37,8 @@ function publicationMemberRow(item){
   return `<article class="member-publication-card">${image}<div class="member-publication-copy"><p class="eyebrow">${esc(item.venue)} · ${esc(item.year)}</p><h2>${esc(item.title)}</h2><p class="member-publication-authors">${esc(item.authors)}</p>${item.summary?`<p class="member-publication-summary">${esc(item.summary)}</p>`:''}<div class="member-publication-actions">${paper}${official}</div></div></article>`;
 }
 function renderReports(){
+  $('#recent-reports-title').textContent=state.user?.role==='admin'?'最近的研究记录':'我的最近记录';
+  $('#reports-access-note').textContent=state.user?.role==='admin'?'管理员可查看全部成员提交的日报与周报。':'仅你和管理员可以查看你提交的日报与周报。';
   if(!state.user){
     const prompt='<div class="empty-state"><h3>登录后查看小组研究日志</h3><p>已有账号可直接登录；新成员提交注册申请后，由管理员审核。</p><button class="button primary" data-auth>登录 / 注册</button></div>';
     $('#recent-reports').innerHTML=prompt; $('#all-reports').innerHTML=prompt; $('#report-count').textContent=''; return;

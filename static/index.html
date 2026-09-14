@@ -52,7 +52,7 @@
       <p class="demo-note" id="demo-note"></p>
       <div class="home-columns">
         <section class="recent-section">
-          <div class="section-heading"><div><p class="eyebrow">RESEARCH LOG</p><h2>最近的研究记录</h2></div><a href="#reports" class="text-link">查看全部 ↗</a></div>
+          <div class="section-heading"><div><p class="eyebrow">RESEARCH LOG</p><h2 id="recent-reports-title">我的最近记录</h2></div><a href="#reports" class="text-link">查看全部 ↗</a></div>
           <div id="recent-reports" class="report-list"></div>
         </section>
         <aside class="news-section">
@@ -62,7 +62,7 @@
       </div>
     </section>
     <section id="view-reports" class="view" hidden>
-      <div class="page-heading"><div><p class="eyebrow">RESEARCH LOG</p><h1>研究日志<span class="accent">.</span></h1><p>记录每天的探索，回顾每一周的进展。</p></div><button class="button primary" data-compose>＋ 提交报告</button></div>
+      <div class="page-heading"><div><p class="eyebrow">RESEARCH LOG</p><h1>研究日志<span class="accent">.</span></h1><p id="reports-access-note">仅你和管理员可以查看你提交的日报与周报。</p></div><button class="button primary" data-compose>＋ 提交报告</button></div>
       <div class="report-toolbar">
         <div class="filter-buttons" role="group" aria-label="报告类型"><button data-filter="all" aria-pressed="true">全部记录</button><button data-filter="daily" aria-pressed="false">日报</button><button data-filter="weekly" aria-pressed="false">周报</button></div>
         <label class="search-label"><span class="sr-only">搜索标题、作者或摘要</span><input id="search" type="search" placeholder="搜索标题、作者或摘要…"></label>
